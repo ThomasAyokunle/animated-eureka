@@ -32,22 +32,34 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 
                 df.columns = df.columns.str.strip()
                 
-                # Your data has Revenue/Unit in first 2 columns, then months starting from column C
-                # Sum all the monthly data across all product categories
-                monthly_columns = df.columns[2:]  # All columns after "Revenue" and "Unit"
-                monthly_columns = [col for col in monthly_columns if '20' in str(col)]  # Only date columns
+                # Row 1: Headers (Revenue, Unit, Jan 2022, Feb 2022, etc)
+                # Row 2: Revenue data (first data row after headers)
+                # Row 52: COGS header
+                # Row 53: COGS data
+                revenue_row = df.iloc[0]  # Row 2 in Google Sheet (index 0 in pandas) - Revenue data
+                cogs_row = df.iloc[51] if len(df) > 51 else None  # Row 53 in Google Sheet (index 51 in pandas) - COGS data
                 
-                # Calculate total revenue per month
+                # Extract months starting from column C (index 2)
                 monthly_totals = []
-                for col in monthly_columns:
-                    try:
-                        total = pd.to_numeric(df[col], errors='coerce').sum()
-                        monthly_totals.append({'Month': col, 'Revenue': total})
-                    except:
-                        pass
+                for i, col in enumerate(df.columns[2:], start=2):
+                    col_str = str(col).strip()
+                    # Check if column name contains month/year pattern
+                    if any(month in col_str for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']) and '20' in col_str:
+                        try:
+                            revenue_value = pd.to_numeric(revenue_row.iloc[i], errors='coerce')
+                            cogs_value = pd.to_numeric(cogs_row.iloc[i], errors='coerce') if cogs_row is not None else None
+                            
+                            if pd.notna(revenue_value):
+                                monthly_totals.append({
+                                    'Month': col_str, 
+                                    'Revenue': revenue_value,
+                                    'COGS': cogs_value if pd.notna(cogs_value) else 0
+                                })
+                        except:
+                            pass
                 
                 df_processed = pd.DataFrame(monthly_totals)
-                df_processed = df_processed.dropna()
+                df_processed = df_processed.dropna(subset=['Revenue'])
                 
                 if len(df_processed) >= 2:
                     
@@ -61,24 +73,28 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                         model = genai.GenerativeModel('gemini-pro')
                         
                         data_str = "\n".join([
-                            f"{row['Month']}: ${row['Revenue']:,.0f}" 
+                            f"{row['Month']}: Revenue=${row['Revenue']:,.0f}, COGS=${row['COGS']:,.0f}" 
                             for _, row in df_processed.iterrows()
                         ])
                         
-                        prompt = f"""Analyze this monthly revenue data and forecast the revenue for all 12 months of 2026.
+                        prompt = f"""Analyze this monthly revenue and COGS data and forecast both for all 12 months of 2026.
 
-Historical Data (monthly revenue):
+Historical Data (monthly revenue and COGS):
 {data_str}
 
-Please analyze trends, seasonality, and patterns. Generate forecasts for each month of 2026 with confidence intervals.
+Please analyze trends, seasonality, and patterns for both revenue and COGS. Generate separate forecasts for each metric for 2026 with confidence intervals.
 
 Return ONLY a JSON object with these exact fields:
 - methodology: string explaining your approach
 - keyInsights: array of 3 strings with key findings
-- forecast: array of exactly 12 objects with these fields for each month (Jan 2026 through Dec 2026): month (string like "Jan 2026"), predicted (number), lower_bound (number), upper_bound (number)
-- annualTotal: number (sum of all 12 predicted months)
+- forecast: array of exactly 12 objects with these fields for each month (Jan 2026 through Dec 2026): month (string like "Jan 2026"), revenue_predicted (number), revenue_lower (number), revenue_upper (number), cogs_predicted (number), cogs_lower (number), cogs_upper (number)
+- annualRevenue: number (sum of all 12 predicted revenue months)
+- annualCOGS: number (sum of all 12 predicted COGS months)
+- annualProfit: number (annualRevenue - annualCOGS)
+- profitMargin: string (like "35%")
 - growthRate: string (like "10%" or "-5%")
-- avgHistorical: number (average of historical data)
+- avgHistoricalRevenue: number
+- avgHistoricalCOGS: number
 
 Make sure forecast array has exactly 12 months. Return only valid JSON, no other text."""
                         
@@ -102,13 +118,15 @@ if 'forecast' in st.session_state:
     forecast_data = st.session_state.forecast
     df_historical = st.session_state.historical
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("2026 Annual Total", f"${forecast_data['annualTotal']:,.0f}")
+        st.metric("2026 Annual Revenue", f"${forecast_data['annualRevenue']:,.0f}")
     with col2:
-        st.metric("Growth Rate", forecast_data['growthRate'])
+        st.metric("2026 Annual COGS", f"${forecast_data['annualCOGS']:,.0f}")
     with col3:
-        st.metric("Avg Historical", f"${forecast_data['avgHistorical']:,.0f}")
+        st.metric("2026 Annual Profit", f"${forecast_data['annualProfit']:,.0f}")
+    with col4:
+        st.metric("Profit Margin", forecast_data['profitMargin'])
     
     st.divider()
     
@@ -128,31 +146,30 @@ if 'forecast' in st.session_state:
     ))
     
     fig.add_trace(go.Scatter(
-        x=df_forecast['month'],
-        y=df_forecast['predicted'],
+        x=df_historical['Month'],
+        y=df_historical['COGS'],
         mode='lines+markers',
-        name='2026 Forecast',
-        line=dict(color='#f59e0b', width=2, dash='dash'),
+        name='Historical COGS',
+        line=dict(color='#ef4444', width=2),
         marker=dict(size=6)
     ))
     
     fig.add_trace(go.Scatter(
         x=df_forecast['month'],
-        y=df_forecast['upper_bound'],
-        fill=None,
-        mode='lines',
-        line_color='rgba(245,158,11,0)',
-        showlegend=False
+        y=df_forecast['revenue_predicted'],
+        mode='lines+markers',
+        name='2026 Revenue Forecast',
+        line=dict(color='#3b82f6', width=2, dash='dash'),
+        marker=dict(size=6)
     ))
     
     fig.add_trace(go.Scatter(
         x=df_forecast['month'],
-        y=df_forecast['lower_bound'],
-        fill='tonexty',
-        mode='lines',
-        line_color='rgba(245,158,11,0)',
-        name='Confidence Interval',
-        fillcolor='rgba(245,158,11,0.2)'
+        y=df_forecast['cogs_predicted'],
+        mode='lines+markers',
+        name='2026 COGS Forecast',
+        line=dict(color='#ef4444', width=2, dash='dash'),
+        marker=dict(size=6)
     ))
     
     fig.update_layout(
@@ -176,11 +193,14 @@ if 'forecast' in st.session_state:
     
     st.subheader("2026 Monthly Forecast Details")
     df_display = pd.DataFrame(forecast_data['forecast'])
-    df_display.columns = ['Month', 'Predicted Revenue', 'Lower Bound', 'Upper Bound']
+    df_display.columns = ['Month', 'Revenue', 'Rev Lower', 'Rev Upper', 'COGS', 'COGS Lower', 'COGS Upper']
     
-    df_display['Predicted Revenue'] = df_display['Predicted Revenue'].apply(lambda x: f"${x:,.0f}")
-    df_display['Lower Bound'] = df_display['Lower Bound'].apply(lambda x: f"${x:,.0f}")
-    df_display['Upper Bound'] = df_display['Upper Bound'].apply(lambda x: f"${x:,.0f}")
+    df_display['Revenue'] = df_display['Revenue'].apply(lambda x: f"${x:,.0f}")
+    df_display['Rev Lower'] = df_display['Rev Lower'].apply(lambda x: f"${x:,.0f}")
+    df_display['Rev Upper'] = df_display['Rev Upper'].apply(lambda x: f"${x:,.0f}")
+    df_display['COGS'] = df_display['COGS'].apply(lambda x: f"${x:,.0f}")
+    df_display['COGS Lower'] = df_display['COGS Lower'].apply(lambda x: f"${x:,.0f}")
+    df_display['COGS Upper'] = df_display['COGS Upper'].apply(lambda x: f"${x:,.0f}")
     
     st.dataframe(df_display, use_container_width=True, hide_index=True)
     
