@@ -17,7 +17,7 @@ with st.sidebar:
         placeholder="https://docs.google.com/spreadsheets/d/...",
         help="Paste your Google Sheet URL here"
     )
-    sheet_name = st.text_input("Sheet Name", value="DEPARTMENT COGS")
+    sheet_name = st.text_input("Sheet Name", value="Sheet1")
     gemini_key = st.text_input("Google Gemini API Key", type="password", help="Get free key from https://aistudio.google.com/app/apikeys")
 
 if st.button("Load Data & Generate Forecast", use_container_width=True):
@@ -46,26 +46,20 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 for col_idx in range(2, len(df.columns)):
                     col_name = str(df.columns[col_idx]).strip()
                     
-                    # Check if column name contains month names and year (they're concatenated without spaces)
+                    # Check if column name matches format like "March-2026"
                     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                     has_month = any(month in col_name for month in months)
+                    has_hyphen = '-' in col_name
                     has_year = '20' in col_name
                     
-                    if has_month and has_year:
+                    if has_month and has_hyphen and has_year:
                         try:
                             revenue_value = pd.to_numeric(revenue_row.iloc[col_idx], errors='coerce')
                             cogs_value = pd.to_numeric(cogs_row.iloc[col_idx], errors='coerce') if cogs_row is not None else None
                             
                             if pd.notna(revenue_value) and revenue_value > 0:
-                                # Format the month name nicely (add space before year)
-                                formatted_name = col_name
-                                for year in ['2022', '2023', '2024', '2025', '2026']:
-                                    if year in col_name:
-                                        formatted_name = col_name.replace(year, f' {year}')
-                                        break
-                                
                                 monthly_totals.append({
-                                    'Month': formatted_name, 
+                                    'Month': col_name, 
                                     'Revenue': revenue_value,
                                     'COGS': cogs_value if pd.notna(cogs_value) else 0
                                 })
@@ -73,7 +67,7 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                             st.warning(f"Could not parse {col_name}: {str(e)}")
                 
                 if not monthly_totals:
-                    st.error("No valid monthly data found. Check that your sheet has month columns starting from column C")
+                    st.error("No valid monthly data found. Check that your sheet has month columns in format like 'March-2026' starting from column C")
                     st.stop()
                 
                 df_processed = pd.DataFrame(monthly_totals)
