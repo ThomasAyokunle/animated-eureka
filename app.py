@@ -17,7 +17,7 @@ with st.sidebar:
         placeholder="https://docs.google.com/spreadsheets/d/...",
         help="Paste your Google Sheet URL here"
     )
-    sheet_name = st.text_input("Sheet Name", value="DEPARTMENT COGS")
+    sheet_name = st.text_input("Sheet Name", value="Sheet1")
     gemini_key = st.text_input("Google Gemini API Key", type="password", help="Get free key from https://aistudio.google.com/app/apikeys")
 
 if st.button("Load Data & Generate Forecast", use_container_width=True):
@@ -32,9 +32,10 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 
                 df.columns = df.columns.str.strip()
                 
-                # Your data has Revenue/Unit in first 2 columns, then months
+                # Your data has Revenue/Unit in first 2 columns, then months starting from column C
                 # Sum all the monthly data across all product categories
                 monthly_columns = df.columns[2:]  # All columns after "Revenue" and "Unit"
+                monthly_columns = [col for col in monthly_columns if '20' in str(col)]  # Only date columns
                 
                 # Calculate total revenue per month
                 monthly_totals = []
@@ -57,7 +58,7 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                     
                     with st.spinner("Analyzing your data..."):
                         genai.configure(api_key=gemini_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        model = genai.GenerativeModel('gemini-pro')
                         
                         data_str = "\n".join([
                             f"{row['Month']}: ${row['Revenue']:,.0f}" 
@@ -92,7 +93,7 @@ Make sure forecast array has exactly 12 months. Return only valid JSON, no other
                         st.session_state.historical = df_processed
                         st.success("Forecast generated successfully!")
                 else:
-                    st.error("Sheet must have at least 2 columns")
+                    st.error("Sheet must have at least 2 months of data")
                     
             except Exception as e:
                 st.error(f"Error: {str(e)}")
