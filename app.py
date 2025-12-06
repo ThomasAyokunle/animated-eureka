@@ -17,7 +17,7 @@ with st.sidebar:
         placeholder="https://docs.google.com/spreadsheets/d/...",
         help="Paste your Google Sheet URL here"
     )
-    sheet_name = st.text_input("Sheet Name", value="Sheet1")
+    sheet_name = st.text_input("Sheet Name", value="DEPARTMENT COGS")
     gemini_key = st.text_input("Google Gemini API Key", type="password", help="Get free key from https://aistudio.google.com/app/apikeys")
 
 if st.button("Load Data & Generate Forecast", use_container_width=True):
@@ -216,3 +216,4 @@ if 'forecast' in st.session_state:
         mime="text/csv",
         use_container_width=True
     )
+
