@@ -1,4 +1,7 @@
 streamlit
 pandas
-google-generativeai
+numpy
+statsmodels
 plotly
+gspread
+oauth2client
