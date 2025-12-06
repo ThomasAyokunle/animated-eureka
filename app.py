@@ -32,12 +32,16 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 
                 df.columns = df.columns.str.strip()
                 
-                # Row 1: Headers (Revenue, Unit, Jan 2022, Feb 2022, etc)
-                # Row 2: Revenue data (first data row after headers)
-                # Row 52: COGS header
-                # Row 53: COGS data
-                revenue_row = df.iloc[0]  # Row 2 in Google Sheet (index 0 in pandas) - Revenue data
-                cogs_row = df.iloc[51] if len(df) > 51 else None  # Row 53 in Google Sheet (index 51 in pandas) - COGS data
+                st.write("**Sheet Preview:**")
+                st.write(f"Total rows: {len(df)}, Total columns: {len(df.columns)}")
+                st.write("**Column headers:**")
+                st.write(df.columns.tolist())
+                st.write("**First few rows:**")
+                st.write(df.head())
+                
+                # Get revenue row (first data row after headers)
+                revenue_row = df.iloc[0]
+                cogs_row = df.iloc[51] if len(df) > 51 else None
                 
                 # Extract months starting from column C (index 2)
                 monthly_totals = []
