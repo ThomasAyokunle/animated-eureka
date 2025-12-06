@@ -14,7 +14,7 @@ with st.sidebar:
     st.header("Configuration")
     sheet_url = st.text_input(
         "Google Sheet URL",
-        placeholder="https://docs.google.com/spreadsheets/d/19rln8dGUP82W6LBXv86krysae_COtaZ4/edit?usp=sharing&ouid=101111909496318593610&rtpof=true&sd=true",
+        placeholder="https://docs.google.com/spreadsheets/d/...",
         help="Paste your Google Sheet URL here"
     )
     sheet_name = st.text_input("Sheet Name", value="DEPARTMENT COGS")
@@ -32,11 +32,23 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 
                 df.columns = df.columns.str.strip()
                 
-                if len(df.columns) >= 2:
-                    df_processed = df.iloc[:, :2].copy()
-                    df_processed.columns = ['Month', 'Revenue']
-                    df_processed['Revenue'] = pd.to_numeric(df_processed['Revenue'], errors='coerce')
-                    df_processed = df_processed.dropna()
+                # Your data has Revenue/Unit in first 2 columns, then months
+                # Sum all the monthly data across all product categories
+                monthly_columns = df.columns[2:]  # All columns after "Revenue" and "Unit"
+                
+                # Calculate total revenue per month
+                monthly_totals = []
+                for col in monthly_columns:
+                    try:
+                        total = pd.to_numeric(df[col], errors='coerce').sum()
+                        monthly_totals.append({'Month': col, 'Revenue': total})
+                    except:
+                        pass
+                
+                df_processed = pd.DataFrame(monthly_totals)
+                df_processed = df_processed.dropna()
+                
+                if len(df_processed) >= 2:
                     
                     st.success(f"Loaded {len(df_processed)} months of data")
                     
