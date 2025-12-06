@@ -46,15 +46,26 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 for col_idx in range(2, len(df.columns)):
                     col_name = str(df.columns[col_idx]).strip()
                     
-                    # Check if column name contains month/year pattern
-                    if any(month in col_name for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']) and '20' in col_name:
+                    # Check if column name contains month names and year (they're concatenated without spaces)
+                    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                    has_month = any(month in col_name for month in months)
+                    has_year = '20' in col_name
+                    
+                    if has_month and has_year:
                         try:
                             revenue_value = pd.to_numeric(revenue_row.iloc[col_idx], errors='coerce')
                             cogs_value = pd.to_numeric(cogs_row.iloc[col_idx], errors='coerce') if cogs_row is not None else None
                             
                             if pd.notna(revenue_value) and revenue_value > 0:
+                                # Format the month name nicely (add space before year)
+                                formatted_name = col_name
+                                for year in ['2022', '2023', '2024', '2025', '2026']:
+                                    if year in col_name:
+                                        formatted_name = col_name.replace(year, f' {year}')
+                                        break
+                                
                                 monthly_totals.append({
-                                    'Month': col_name, 
+                                    'Month': formatted_name, 
                                     'Revenue': revenue_value,
                                     'COGS': cogs_value if pd.notna(cogs_value) else 0
                                 })
