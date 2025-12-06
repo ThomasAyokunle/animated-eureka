@@ -42,7 +42,6 @@ except ImportError:
 # Page configuration
 st.set_page_config(
     page_title="Revenue & COGS Forecasting",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -75,7 +74,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Title
-st.markdown('<p class="main-header">📊 Revenue, COGS & Profit Forecasting</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">Revenue, COGS & Profit Forecasting</p>', unsafe_allow_html=True)
 st.markdown("---")
 
 # Initialize session state
@@ -122,7 +121,7 @@ with st.sidebar:
     
     # Data source selection
     data_source = st.radio(
-        "📂 Select Data Source:",
+        "Select Data Source:",
         ["Upload CSV File", "Google Sheets"],
         help="Choose how to load your data"
     )
@@ -138,15 +137,15 @@ with st.sidebar:
         if uploaded_file is not None:
             st.session_state.df = pd.read_csv(uploaded_file)
             st.session_state.gsheet_connected = False
-            st.success(f"✅ File uploaded: {uploaded_file.name}")
-            st.info(f"📊 Total rows: {len(st.session_state.df)}")
-            st.info(f"📅 Months: {len(st.session_state.df.columns) - 1}")
+            st.success(f"File uploaded: {uploaded_file.name}")
+            st.info(f"Total rows: {len(st.session_state.df)}")
+            st.info(f"Months: {len(st.session_state.df.columns) - 1}")
     
     else:  # Google Sheets
         if not GSPREAD_AVAILABLE:
-            st.error("❌ Google Sheets integration not available. Install: pip install gspread oauth2client")
+            st.error("Google Sheets integration not available. Install: pip install gspread oauth2client")
         else:
-            st.markdown("### 🔗 Connect to Google Sheets")
+            st.markdown("### Connect to Google Sheets")
             
             # Two methods
             connection_method = st.radio(
@@ -156,7 +155,7 @@ with st.sidebar:
             )
             
             if connection_method == "Public Sheet (Read-only)":
-                st.info("💡 Make your Google Sheet public: Share → Anyone with link can view")
+                st.info("Make your Google Sheet public: Share → Anyone with link can view")
                 
                 sheet_url = st.text_input(
                     "Google Sheet URL:",
@@ -175,12 +174,12 @@ with st.sidebar:
                                 
                                 st.session_state.df = df
                                 st.session_state.gsheet_connected = True
-                                st.success("✅ Connected to Google Sheets!")
-                                st.info(f"📊 Total rows: {len(df)}")
-                                st.info(f"📅 Columns: {len(df.columns)}")
+                                st.success("Connected to Google Sheets!")
+                                st.info(f"Total rows: {len(df)}")
+                                st.info(f"Columns: {len(df.columns)}")
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"❌ Connection failed: {e}")
+                                st.error(f"Connection failed: {e}")
                                 st.info("Make sure your sheet is publicly accessible")
                     else:
                         st.warning("Please enter a Google Sheet URL")
@@ -207,7 +206,7 @@ with st.sidebar:
                     key="private_sheet_url"
                 )
                 
-                if st.button("🔗 Connect with Credentials"):
+                if st.button("Connect with Credentials"):
                     if credentials_file and sheet_url:
                         with st.spinner("Connecting to Google Sheets..."):
                             credentials_json = credentials_file.read().decode('utf-8')
@@ -216,12 +215,12 @@ with st.sidebar:
                             if df is not None:
                                 st.session_state.df = df
                                 st.session_state.gsheet_connected = True
-                                st.success("✅ Connected to Google Sheets!")
-                                st.info(f"📊 Total rows: {len(df)}")
-                                st.info(f"📅 Columns: {len(df.columns)}")
+                                st.success("Connected to Google Sheets!")
+                                st.info(f"Total rows: {len(df)}")
+                                st.info(f"Columns: {len(df.columns)}")
                                 st.rerun()
                             else:
-                                st.error(f"❌ Connection failed: {error}")
+                                st.error(f"Connection failed: {error}")
                     else:
                         st.warning("Please provide both credentials and sheet URL")
             
@@ -232,7 +231,7 @@ with st.sidebar:
     
     # Use sample data button
     st.markdown("---")
-    if st.button("📋 Use Sample Data"):
+    if st.button("Use Sample Data"):
         sample_data = """RevenueUnit,January-2022,February-2022,March-2022,April-2022,May-2022,June-2022,July-2022,August-2022,September-2022,October-2022,November-2022,December-2022,January-2023,February-2023,March-2023,April-2023,May-2023,June-2023,July-2023,August-2023,September-2023,October-2023,November-2023,December-2023,January-2024,February-2024,March-2024,April-2024,May-2024,June-2024,July-2024,August-2024,September-2024,October-2024,November-2024,December-2024
 ALLERGY COUGH & FLU,168050,966433.08,1029628.06,1027067.74,1375472.5,1439849.28,1685388.7,1172299.73,1530216.38,1446259.76,1403527.8,1560990.46,1063906.37,1010453.78,911667.5,1157105.23,1309143.75,1342215.67,1851251.05,1221026.56,958779.95,1506295.52,1003153.85,2184740.59,1527837.01,2013113.03,1456502.68,1571843.35,1697217.52,1991981.27,2175297.24,1764480.46,1764457.31,2691198.68,2201113.61,3490623.49
 ANTIMALARIAL,103530,738359.43,804780.69,923147.21,1951351,441909.14,1438585,1238352.31,1205506.26,1447037.98,1342536.41,1339327.5,1208032.1,1064672.81,1220059.07,1455216.77,1484055.77,1881336.73,1737407.27,1300902.41,1095995.45,1183575.79,974535.96,1681690.6,1538909.03,2001271.06,1370931.06,1530208,1541444.25,2017119.01,2295928.58,1831249.18,1776821.73,1735575.29,1776464.82,2396447.59
@@ -241,7 +240,7 @@ ANTIMALARIAL,72000,515000,561000,643000,1360000,308000,1003000,864000,840000,100
         
         st.session_state.df = pd.read_csv(io.StringIO(sample_data))
         st.session_state.gsheet_connected = False
-        st.success("✅ Sample data loaded!")
+        st.success("Sample data loaded!")
         st.rerun()
     
     st.markdown("---")
@@ -258,10 +257,10 @@ ANTIMALARIAL,72000,515000,561000,643000,1360000,308000,1003000,864000,840000,100
     show_trends = st.checkbox("Show Trend Analysis", value=True)
     
     st.markdown("---")
-    st.markdown("### 📖 How to Use")
+    st.markdown("### How to Use")
     
     if st.session_state.gsheet_connected:
-        st.success("🔗 Connected to Google Sheets")
+        st.success("Connected to Google Sheets")
         st.markdown("""
         - Data auto-syncs from your sheet
         - Click 'Refresh' to update
@@ -536,7 +535,7 @@ if st.session_state.df is not None:
     categories = parsed_data['categories']
     
     # Data preview
-    with st.expander("📋 View Parsed Data Preview", expanded=False):
+    with st.expander("View Parsed Data Preview", expanded=False):
         preview_data = []
         for cat in categories:
             preview_data.append({
@@ -551,12 +550,12 @@ if st.session_state.df is not None:
                     'First 3 Months': f"{cat['cogs'][:3]}"
                 })
         st.dataframe(pd.DataFrame(preview_data), use_container_width=True)
-        st.info(f"✅ Found {len(categories)} categories with Revenue data. {sum(1 for c in categories if c['cogs'] is not None)} have COGS data.")
+        st.info(f"Found {len(categories)} categories with Revenue data. {sum(1 for c in categories if c['cogs'] is not None)} have COGS data.")
     
     # Run forecast button
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🚀 Run Forecast for All Categories", type="primary", use_container_width=True):
+        if st.button("Run Forecast for All Categories", type="primary", use_container_width=True):
             with st.spinner("Forecasting... Please wait..."):
                 forecasts = {}
                 progress_bar = st.progress(0)
@@ -610,7 +609,7 @@ if st.session_state.df is not None:
                         continue
                 
                 st.session_state.forecasts = forecasts
-                st.success(f"✅ Successfully forecasted {len(forecasts)} categories!")
+                st.success(f"Successfully forecasted {len(forecasts)} categories!")
                 st.rerun()
     
     # Display results
@@ -618,10 +617,10 @@ if st.session_state.df is not None:
         forecasts = st.session_state.forecasts
         
         st.markdown("---")
-        st.header("📊 Forecast Results")
+        st.header("Forecast Results")
         
         # Summary metrics
-        st.subheader("📈 Overall 2026 Summary")
+        st.subheader("Overall 2026 Summary")
         
         total_revenue_2026 = sum([data['revenue']['forecast'].sum() for data in forecasts.values()])
         total_cogs_2026 = sum([data['cogs']['forecast'].sum() for data in forecasts.values() if data['cogs'] is not None and data['cogs']['forecast'] is not None])
@@ -641,7 +640,7 @@ if st.session_state.df is not None:
         
         # Category selector
         st.markdown("---")
-        st.subheader("🔍 Detailed Category Analysis")
+        st.subheader("Detailed Category Analysis")
         
         selected_category = st.selectbox(
             "Select a category to view details:",
@@ -653,7 +652,7 @@ if st.session_state.df is not None:
             
             # Show trend analysis if enabled
             if show_trends:
-                st.subheader("📊 Complete Financial Overview")
+                st.subheader("Complete Financial Overview")
                 combined_chart = create_combined_chart(
                     data['revenue']['historical'],
                     data['cogs']['historical'] if data['cogs'] else None,
@@ -709,7 +708,7 @@ if st.session_state.df is not None:
             col1, col2 = st.columns(2)
             
             with col1:
-                st.subheader("📅 2026 Monthly Forecast")
+                st.subheader("2026 Monthly Forecast")
                 months = ['January', 'February', 'March', 'April', 'May', 'June',
                          'July', 'August', 'September', 'October', 'November', 'December']
                 
@@ -737,7 +736,7 @@ if st.session_state.df is not None:
                 )
             
             with col2:
-                st.subheader("📊 2026 Statistics")
+                st.subheader("2026 Statistics")
                 
                 revenue_values = data['revenue']['forecast'].values
                 stats_data = {
@@ -773,7 +772,7 @@ if st.session_state.df is not None:
         
         # Comparison charts
         st.markdown("---")
-        st.subheader("📊 Category Comparison - 2026 Forecast")
+        st.subheader("Category Comparison - 2026 Forecast")
         
         comparison_data = []
         for category, data in forecasts.items():
@@ -820,7 +819,7 @@ if st.session_state.df is not None:
         
         # Export section
         st.markdown("---")
-        st.subheader("⬇️ Export Results")
+        st.subheader("Export Results")
         
         col1, col2, col3 = st.columns(3)
         
@@ -841,7 +840,7 @@ if st.session_state.df is not None:
             csv_revenue = revenue_export_df.to_csv(index=False)
             
             st.download_button(
-                label="📥 Download Revenue Forecast",
+                label="Download Revenue Forecast",
                 data=csv_revenue,
                 file_name="revenue_forecast_2026.csv",
                 mime="text/csv",
@@ -863,7 +862,7 @@ if st.session_state.df is not None:
                 csv_cogs = cogs_export_df.to_csv(index=False)
                 
                 st.download_button(
-                    label="📥 Download COGS Forecast",
+                    label="Download COGS Forecast",
                     data=csv_cogs,
                     file_name="cogs_forecast_2026.csv",
                     mime="text/csv",
@@ -885,7 +884,7 @@ if st.session_state.df is not None:
                 csv_profit = profit_export_df.to_csv(index=False)
                 
                 st.download_button(
-                    label="📥 Download Profit Forecast",
+                    label="Download Profit Forecast",
                     data=csv_profit,
                     file_name="profit_forecast_2026.csv",
                     mime="text/csv",
@@ -905,13 +904,13 @@ if st.session_state.df is not None:
 
 else:
     # Welcome screen
-    st.info("👋 Welcome! Please upload your CSV file, connect to Google Sheets, or use sample data to get started.")
+    st.info("Welcome! Please upload your CSV file, connect to Google Sheets, or use sample data to get started.")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("""
-        ### 📝 CSV Format Requirements:
+        ### CSV Format Requirements:
         
         Your CSV should have categories listed **twice** in the same order:
         - **First N rows**: Revenue data for each category
@@ -931,7 +930,7 @@ else:
     
     with col2:
         st.markdown("""
-        ### 🔗 Google Sheets Integration:
+        ###  Google Sheets Integration:
         
         **Option 1: Public Sheet (Easiest)**
         1. Open your Google Sheet
@@ -952,17 +951,17 @@ else:
         """)
     
     st.markdown("""
-    ### 🎯 What This App Does:
-    - ✅ Forecasts 2026 Revenue for each category
-    - ✅ Forecasts 2026 COGS for each category
-    - ✅ Calculates Gross Profit automatically
-    - ✅ Shows profit margins and trends
-    - ✅ Provides growth indicators
-    - ✅ Creates interactive charts with trend analysis
-    - ✅ Exports all results to CSV
-    - ✅ **Syncs with Google Sheets in real-time!**
+    ### What This App Does:
+    - Forecasts 2026 Revenue for each category
+    - Forecasts 2026 COGS for each category
+    - Calculates Gross Profit automatically
+    - Shows profit margins and trends
+    - Provides growth indicators
+    - Creates interactive charts with trend analysis
+    - Exports all results to CSV
+    - **Syncs with Google Sheets in real-time!**
     
-    ### 📊 Advanced Features:
+    ### Advanced Features:
     - **Trend Analysis**: See historical trends with forecast projections
     - **Growth Indicators**: Automatic calculation of expected growth rates
     - **Confidence Intervals**: Understand forecast uncertainty
@@ -973,3 +972,4 @@ else:
     
     st.markdown("---")
     st.markdown("*Powered by statsmodels, plotly, gspread, and Streamlit*")
+
