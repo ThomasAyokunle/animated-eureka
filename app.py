@@ -41,25 +41,31 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
                 
                 # Extract months starting from column C (index 2)
                 monthly_totals = []
-                for i, col in enumerate(df.columns[2:], start=2):
-                    col_str = str(col).strip()
+                
+                # Get column names starting from index 2
+                for col_idx in range(2, len(df.columns)):
+                    col_name = str(df.columns[col_idx]).strip()
+                    
                     # Check if column name contains month/year pattern
-                    if any(month in col_str for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']) and '20' in col_str:
+                    if any(month in col_name for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']) and '20' in col_name:
                         try:
-                            revenue_value = pd.to_numeric(revenue_row.iloc[i], errors='coerce')
-                            cogs_value = pd.to_numeric(cogs_row.iloc[i], errors='coerce') if cogs_row is not None else None
+                            revenue_value = pd.to_numeric(revenue_row.iloc[col_idx], errors='coerce')
+                            cogs_value = pd.to_numeric(cogs_row.iloc[col_idx], errors='coerce') if cogs_row is not None else None
                             
-                            if pd.notna(revenue_value):
+                            if pd.notna(revenue_value) and revenue_value > 0:
                                 monthly_totals.append({
-                                    'Month': col_str, 
+                                    'Month': col_name, 
                                     'Revenue': revenue_value,
                                     'COGS': cogs_value if pd.notna(cogs_value) else 0
                                 })
-                        except:
-                            pass
+                        except Exception as e:
+                            st.warning(f"Could not parse {col_name}: {str(e)}")
+                
+                if not monthly_totals:
+                    st.error("No valid monthly data found. Check that your sheet has month columns starting from column C")
+                    st.stop()
                 
                 df_processed = pd.DataFrame(monthly_totals)
-                df_processed = df_processed.dropna(subset=['Revenue'])
                 
                 if len(df_processed) >= 2:
                     
@@ -216,4 +222,3 @@ if 'forecast' in st.session_state:
         mime="text/csv",
         use_container_width=True
     )
-
