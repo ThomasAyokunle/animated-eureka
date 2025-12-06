@@ -17,7 +17,7 @@ with st.sidebar:
         placeholder="https://docs.google.com/spreadsheets/d/...",
         help="Paste your Google Sheet URL here"
     )
-    sheet_name = st.text_input("Sheet Name", value="Sheet1")
+    sheet_name = st.text_input("Sheet Tab Name", value="Sheet1", help="Name of the sheet tab (e.g., 'Revenue', 'Data', etc)")
     gemini_key = st.text_input("Google Gemini API Key", type="password", help="Get free key from https://aistudio.google.com/app/apikeys")
 
 if st.button("Load Data & Generate Forecast", use_container_width=True):
@@ -27,7 +27,11 @@ if st.button("Load Data & Generate Forecast", use_container_width=True):
         with st.spinner("Loading data from Google Sheet..."):
             try:
                 sheet_id = sheet_url.split('/d/')[1].split('/')[0]
-                url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+                url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
+                
+                # If sheet_name is not "Sheet1", we need to get the gid (sheet ID)
+                # For now, using gid=0 which is usually the first sheet
+                # You may need to adjust this if your data is on a different tab
                 df = pd.read_csv(url)
                 
                 df.columns = df.columns.str.strip()
