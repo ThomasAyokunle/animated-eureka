@@ -901,55 +901,33 @@ if st.session_state.df is not None:
             mime="text/csv",
             use_container_width=True
         )
-      # Add Month-on-Month Revenue Download Button
-st.markdown("---")
-st.subheader("📊 Month-on-Month Revenue Report")
 
-# Create month-on-month revenue dataframe
-mom_revenue_data = []
-
-for category, data in forecasts.items():
-    # Get historical revenue
-    historical_ts = data['revenue']['historical']
-    forecast_series = data['revenue']['forecast']
+else:
+    # Welcome screen
+    st.info("Welcome! Please upload your CSV file, connect to Google Sheets, or use sample data to get started.")
     
-    # Combine historical and forecast
-    all_dates = list(historical_ts.index) + list(forecast_series.index)
-    all_values = list(historical_ts.values) + list(forecast_series.values)
+    col1, col2 = st.columns(2)
     
-    for date, value in zip(all_dates, all_values):
-        mom_revenue_data.append({
-            'Department': category,
-            'Month': date.strftime('%B'),
-            'Year': date.year,
-            'Date': date.strftime('%Y-%m'),
-            'Revenue': value
-        })
-
-mom_revenue_df = pd.DataFrame(mom_revenue_data)
-
-# Pivot table for better viewing (optional preview)
-with st.expander("📋 Preview Month-on-Month Revenue"):
-    pivot_df = mom_revenue_df.pivot(index='Department', columns='Date', values='Revenue')
-    st.dataframe(
-        pivot_df.style.format('₦{:,.2f}'),
-        use_container_width=True,
-        height=300
-    )
-
-# Download button
-csv_mom = mom_revenue_df.to_csv(index=False)
-st.download_button(
-    label="📥 Download Month-on-Month Revenue (All Periods)",
-    data=csv_mom,
-    file_name="month_on_month_revenue_all_periods.csv",
-    mime="text/csv",
-    use_container_width=True,
-    type="primary"
-)
-
-st.info("💡 This file includes historical data (2022-2024) AND 2026 forecasts for all departments")
-
+    with col1:
+        st.markdown("""
+        ### CSV Format Requirements:
+        
+        Your CSV should have categories listed **twice** in the same order:
+        - **First N rows**: Revenue data for each category
+        - **Next N rows**: COGS data for the same categories (same order)
+        
+        #### Example Structure:
+        ```
+        RevenueUnit,January-2022,February-2022,...
+        ALLERGY COUGH & FLU,168050,966433.08,...    ← Revenue
+        ANTIMALARIAL,103530,738359.43,...           ← Revenue
+        BEAUTY,29750,20452,...                      ← Revenue
+        ALLERGY COUGH & FLU,120000,690000,...       ← COGS
+        ANTIMALARIAL,72000,515000,...               ← COGS
+        BEAUTY,21000,14500,...                      ← COGS
+        ```
+        """)
+    
     with col2:
         st.markdown("""
         ###  Google Sheets Integration:
@@ -994,5 +972,3 @@ st.info("💡 This file includes historical data (2022-2024) AND 2026 forecasts 
     
     st.markdown("---")
     st.markdown("*Powered by statsmodels, plotly, gspread, and Streamlit*")
-
-
