@@ -820,6 +820,56 @@ if st.session_state.df is not None:
         # Export section
         st.markdown("---")
         st.subheader("Export Results")
+
+        # -------------------------------
+# Export Matrix Wide: Revenue & COGS by Department and Month
+# -------------------------------
+st.markdown("---")
+st.subheader("📊 Export Wide Matrix: Department x Month")
+
+months_idx = list(next(iter(forecasts.values()))['revenue']['forecast'].index)
+month_cols = [d.strftime("%b-%Y") for d in months_idx]
+
+# ----- Revenue wide -----
+rev_rows = []
+for category, data in forecasts.items():
+    row = {"Category": category}
+    for d in months_idx:
+        row[d.strftime("%b-%Y")] = data['revenue']['forecast'].loc[d]
+    rev_rows.append(row)
+
+rev_wide_df = pd.DataFrame(rev_rows)
+rev_csv = rev_wide_df.to_csv(index=False)
+
+st.download_button(
+    label="📥 Download Revenue Wide (Dept x Month)",
+    data=rev_csv,
+    file_name="department_revenue_wide_2026.csv",
+    mime="text/csv",
+    use_container_width=True
+)
+
+# ----- COGS wide -----
+cogs_rows = []
+for category, data in forecasts.items():
+    if data['cogs'] and data['cogs']['forecast'] is not None:
+        row = {"Category": category}
+        for d in months_idx:
+            row[d.strftime("%b-%Y")] = data['cogs']['forecast'].loc[d]
+        cogs_rows.append(row)
+
+if cogs_rows:
+    cogs_wide_df = pd.DataFrame(cogs_rows)
+    cogs_csv = cogs_wide_df.to_csv(index=False)
+
+    st.download_button(
+        label="📥 Download COGS Wide (Dept x Month)",
+        data=cogs_csv,
+        file_name="department_cogs_wide_2026.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
         
         col1, col2, col3 = st.columns(3)
         
@@ -947,7 +997,7 @@ else:
         5. Share sheet with service account email
         6. Upload credentials in sidebar
         
-        [📖 Detailed Setup Guide](https://docs.gspread.org/en/latest/oauth2.html)
+        [Detailed Setup Guide](https://docs.gspread.org/en/latest/oauth2.html)
         """)
     
     st.markdown("""
@@ -972,3 +1022,4 @@ else:
     
     st.markdown("---")
     st.markdown("*Powered by statsmodels, plotly, gspread, and Streamlit*")
+
