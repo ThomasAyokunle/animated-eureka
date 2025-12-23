@@ -901,6 +901,110 @@ if st.session_state.df is not None:
             mime="text/csv",
             use_container_width=True
         )
+        # Department Revenue Month-on-Month Export
+        st.markdown("---")
+        st.subheader("📊 Department Revenue Analysis")
+        
+        # Create month-on-month revenue data
+        mom_revenue_data = []
+        
+        for category, data in forecasts.items():
+            # Historical data
+            historical_ts = data['revenue']['historical']
+            for date, value in historical_ts.items():
+                mom_revenue_data.append({
+                    'Department': category,
+                    'Date': date.strftime('%Y-%m-%d'),
+                    'Month': date.strftime('%B %Y'),
+                    'Revenue': value,
+                    'Type': 'Historical'
+                })
+            
+            # Forecast data
+            forecast_ts = data['revenue']['forecast']
+            for date, value in forecast_ts.items():
+                mom_revenue_data.append({
+                    'Department': category,
+                    'Date': date.strftime('%Y-%m-%d'),
+                    'Month': date.strftime('%B %Y'),
+                    'Revenue': value,
+                    'Type': 'Forecast'
+                })
+        
+        mom_revenue_df = pd.DataFrame(mom_revenue_data)
+        
+        # Pivot for better viewing (departments as columns)
+        mom_pivot = mom_revenue_df.pivot_table(
+            index=['Date', 'Month', 'Type'],
+            columns='Department',
+            values='Revenue',
+            aggfunc='first'
+        ).reset_index()
+        
+        # Show preview
+        with st.expander("📋 Preview Department Revenue Month-on-Month", expanded=False):
+            st.dataframe(mom_pivot.head(10), use_container_width=True)
+            st.info(f"Total records: {len(mom_pivot)} months × {len(forecasts)} departments")
+        
+        # Download buttons
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Long format (one row per department per month)
+            csv_mom_long = mom_revenue_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Revenue MoM (Long Format)",
+                data=csv_mom_long,
+                file_name="department_revenue_month_on_month.csv",
+                mime="text/csv",
+                use_container_width=True,
+                help="One row per department per month"
+            )
+        
+        with col2:
+            # Wide format (departments as columns)
+            csv_mom_pivot = mom_pivot.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Revenue MoM (Wide Format)",
+                data=csv_mom_pivot,
+                file_name="department_revenue_pivot.csv",
+                mime="text/csv",
+                use_container_width=True,
+                help="Departments as columns, easier for Excel analysis"
+            )
+```
+
+**Where to add it:** Insert this code after line 800 (after the "Download Complete Summary" button) and before the `else:` statement that starts the welcome screen.
+
+**What this adds:**
+
+1. **Two download formats:**
+   - **Long Format**: One row per department per month (good for databases)
+   - **Wide Format**: Departments as columns (good for Excel pivot tables)
+
+2. **Includes both:**
+   - Historical data (2022-2024)
+   - Forecast data (2026)
+
+3. **Preview section** to see the data before downloading
+
+**The CSV will look like:**
+
+**Long Format:**
+```
+Department,Date,Month,Revenue,Type
+ALLERGY COUGH & FLU,2022-01-01,January 2022,168050,Historical
+ALLERGY COUGH & FLU,2022-02-01,February 2022,966433.08,Historical
+...
+ALLERGY COUGH & FLU,2026-01-01,January 2026,2500000,Forecast
+```
+
+**Wide Format:**
+```
+Date,Month,Type,ALLERGY COUGH & FLU,ANTIMALARIAL,...
+2022-01-01,January 2022,Historical,168050,103530,...
+2022-02-01,February 2022,Historical,966433.08,738359.43,...```
+
 else:
     # Welcome screen
     st.info("Welcome! Please upload your CSV file, connect to Google Sheets, or use sample data to get started.")
@@ -971,5 +1075,4 @@ else:
     
     st.markdown("---")
     st.markdown("*Powered by statsmodels, plotly, gspread, and Streamlit*")
-
 
