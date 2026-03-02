@@ -602,6 +602,160 @@ if st.session_state.df is not None:
         
         st.info("💡 Includes historical (2022-2024) AND 2026 forecasts")
 
+        # ── NEW SECTION: Monthly Revenue ──────────────────────────────────────
+        st.markdown("---")
+        st.subheader("📅 Monthly Revenue")
+        st.markdown("Visualise total revenue across all categories for any selected month and year.")
+
+        # Build a flat table of all historical + forecast monthly revenue per category
+        all_monthly_rows = []
+        for category, data in forecasts.items():
+            hist_ts = data['revenue']['historical']
+            fcast_ts = data['revenue']['forecast']
+            for date, value in list(hist_ts.items()) + list(fcast_ts.items()):
+                all_monthly_rows.append({
+                    'Category': category,
+                    'Year': date.year,
+                    'Month': date.month,
+                    'Month_Label': date.strftime('%b-%Y'),
+                    'Date': date,
+                    'Revenue': value
+                })
+
+        monthly_rev_df = pd.DataFrame(all_monthly_rows)
+
+        # Controls
+        ctrl_col1, ctrl_col2, ctrl_col3 = st.columns(3)
+        with ctrl_col1:
+            available_years = sorted(monthly_rev_df['Year'].unique())
+            selected_year = st.selectbox("Select Year", available_years,
+                                         index=len(available_years) - 1,
+                                         key="monthly_rev_year")
+        with ctrl_col2:
+            month_options = {1:'January',2:'February',3:'March',4:'April',
+                             5:'May',6:'June',7:'July',8:'August',
+                             9:'September',10:'October',11:'November',12:'December'}
+            selected_month_num = st.selectbox(
+                "Select Month", list(month_options.keys()),
+                format_func=lambda x: month_options[x],
+                key="monthly_rev_month"
+            )
+        with ctrl_col3:
+            view_mode = st.radio("View Mode", ["Single Month", "Full Year"],
+                                  key="monthly_rev_mode", horizontal=True)
+
+        if view_mode == "Single Month":
+            filtered = monthly_rev_df[
+                (monthly_rev_df['Year'] == selected_year) &
+                (monthly_rev_df['Month'] == selected_month_num)
+            ].copy()
+
+            if filtered.empty:
+                st.warning("No data available for the selected month and year.")
+            else:
+                total_month_rev = filtered['Revenue'].sum()
+                st.metric(
+                    f"Total Revenue — {month_options[selected_month_num]} {selected_year}",
+                    f"₦{total_month_rev:,.0f}"
+                )
+
+                fig_month = px.bar(
+                    filtered, x='Category', y='Revenue',
+                    title=f"Revenue by Category — {month_options[selected_month_num]} {selected_year}",
+                    color='Category', text_auto='.2s'
+                )
+                fig_month.update_layout(height=400, template='plotly_white',
+                                        showlegend=False, xaxis_title='Category',
+                                        yaxis_title='Revenue (₦)')
+                st.plotly_chart(fig_month, use_container_width=True)
+
+                st.dataframe(
+                    filtered[['Category', 'Revenue']]
+                    .sort_values('Revenue', ascending=False)
+                    .reset_index(drop=True)
+                    .style.format({'Revenue': '₦{:,.0f}'}),
+                    use_container_width=True
+                )
+
+                csv_single = filtered[['Category', 'Revenue']].to_csv(index=False)
+                st.download_button(
+                    f"📥 Download {month_options[selected_month_num]} {selected_year} Revenue",
+                    csv_single,
+                    f"monthly_revenue_{selected_year}_{selected_month_num:02d}.csv",
+                    "text/csv"
+                )
+
+        else:  # Full Year
+            year_df = monthly_rev_df[monthly_rev_df['Year'] == selected_year].copy()
+            year_df = year_df.sort_values('Month')
+
+            if year_df.empty:
+                st.warning("No data available for the selected year.")
+            else:
+                # Aggregated monthly totals
+                monthly_totals = (
+                    year_df.groupby(['Month', 'Month_Label'], as_index=False)['Revenue']
+                    .sum()
+                    .sort_values('Month')
+                )
+
+                fig_year = go.Figure()
+                fig_year.add_trace(go.Bar(
+                    x=monthly_totals['Month_Label'],
+                    y=monthly_totals['Revenue'],
+                    name='Total Revenue',
+                    marker_color='#3b82f6',
+                    text=monthly_totals['Revenue'].apply(lambda v: f'₦{v:,.0f}'),
+                    textposition='outside'
+                ))
+                fig_year.update_layout(
+                    title=f"Monthly Revenue — {selected_year}",
+                    xaxis_title='Month', yaxis_title='Revenue (₦)',
+                    height=450, template='plotly_white', hovermode='x unified'
+                )
+                st.plotly_chart(fig_year, use_container_width=True)
+
+                # Stacked bar by category
+                fig_stacked = px.bar(
+                    year_df.sort_values('Month'),
+                    x='Month_Label', y='Revenue', color='Category',
+                    title=f"Monthly Revenue by Category — {selected_year}",
+                    barmode='stack'
+                )
+                fig_stacked.update_layout(height=450, template='plotly_white',
+                                          xaxis_title='Month', yaxis_title='Revenue (₦)')
+                st.plotly_chart(fig_stacked, use_container_width=True)
+
+                # Summary table
+                pivot_year = year_df.pivot_table(
+                    index='Category', columns='Month_Label',
+                    values='Revenue', aggfunc='sum'
+                ).fillna(0)
+                # reorder columns by month number
+                month_order = (
+                    year_df[['Month', 'Month_Label']]
+                    .drop_duplicates()
+                    .sort_values('Month')['Month_Label']
+                    .tolist()
+                )
+                pivot_year = pivot_year[[c for c in month_order if c in pivot_year.columns]]
+                pivot_year['Annual Total'] = pivot_year.sum(axis=1)
+
+                with st.expander(f"📋 {selected_year} Monthly Revenue Table"):
+                    st.dataframe(
+                        pivot_year.style.format('₦{:,.0f}'),
+                        use_container_width=True
+                    )
+
+                csv_year = pivot_year.reset_index().to_csv(index=False)
+                st.download_button(
+                    f"📥 Download {selected_year} Monthly Revenue",
+                    csv_year,
+                    f"monthly_revenue_{selected_year}.csv",
+                    "text/csv"
+                )
+        # ── END NEW SECTION ───────────────────────────────────────────────────
+
 else:
     st.info("👋 Upload CSV, connect to Google Sheets, or use sample data")
     
